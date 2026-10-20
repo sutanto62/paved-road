@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Paved Road: Terminal Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#0a0f0b; --panel:#0f1711; --fg:#cfe8d5; --dim:#7a9482; --line:#223226;
+  --green:#4ade80; --amber:#fbbf24; --red:#f87171; --blue:#7dd3fc;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f1e6; --panel:#fbf9f1; --fg:#1d2820; --dim:#667a6b; --line:#cdc7b3;
+    --green:#15803d; --amber:#a16207; --red:#b91c1c; --blue:#1d4ed8; color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f1e6; --panel:#fbf9f1; --fg:#1d2820; --dim:#667a6b; --line:#cdc7b3;
+  --green:#15803d; --amber:#a16207; --red:#b91c1c; --blue:#1d4ed8; color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0a0f0b; --panel:#0f1711; --fg:#cfe8d5; --dim:#7a9482; --line:#223226;
+  --green:#4ade80; --amber:#fbbf24; --red:#f87171; --blue:#7dd3fc; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:clamp(11px,1.65vh,14px);line-height:1.38;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+b,strong{font-weight:700}
+p{margin:0}
+.dim{color:var(--dim)}
+.g{color:var(--green)}.a{color:var(--amber)}.r{color:var(--red)}.bl{color:var(--blue)}
+
+.term{height:100%;display:flex;flex-direction:column;max-width:1320px;margin:0 auto;background:var(--panel);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.titlebar{display:flex;align-items:center;gap:12px;padding:5px 12px;border-bottom:1px solid var(--line);color:var(--dim);flex:none}
+.titlebar .lights{letter-spacing:3px}
+.titlebar .lights i{font-style:normal}
+.titlebar .ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbtn{background:none;border:0;color:var(--dim);cursor:pointer;padding:0 4px;white-space:nowrap}
+.tbtn:hover{color:var(--fg)}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);flex:none}
+.tabs [role=tab]{background:none;border:0;border-right:1px solid var(--line);padding:4px 12px;color:var(--dim);cursor:pointer;white-space:nowrap}
+.tabs [role=tab] kbd{font-family:inherit;color:var(--amber);margin-right:6px}
+.tabs [role=tab]:hover{color:var(--fg)}
+.tabs [role=tab][aria-selected=true]{background:var(--fg);color:var(--bg)}
+.tabs [role=tab][aria-selected=true] kbd{color:var(--bg)}
+.screen{flex:1;min-height:0;position:relative}
+.panel{position:absolute;inset:0;padding:8px 14px;display:flex;flex-direction:column;gap:8px;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.panel[hidden]{display:none}
+.status{flex:none;display:flex;justify-content:space-between;gap:12px;padding:4px 12px;border-top:1px solid var(--line);color:var(--dim);background:var(--bg);padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.status span:last-child{text-align:right}
+
+.prompt{color:var(--green);flex:none}
+.prompt::before{content:"$ ";color:var(--dim)}
+.cols{flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.cols.wide-l{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.cols.wide-r{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+@media (max-width:820px){.cols,.cols.wide-l,.cols.wide-r{grid-template-columns:minmax(0,1fr);flex:none}}
+.box{border:1px solid var(--line);padding:6px 10px 8px;min-width:0;display:flex;flex-direction:column;gap:5px}
+.box>h3{margin:-14px 0 2px;font-size:1em;font-weight:500;color:var(--amber);background:var(--panel);align-self:flex-start;padding:0 6px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 10px;align-items:center}
+.kv>label,.lab{color:var(--dim)}
+.kv .full{grid-column:1/-1}
+
+.b{background:none;border:1px solid var(--line);padding:0 9px;cursor:pointer;color:var(--fg);white-space:nowrap}
+.b:hover{border-color:var(--dim)}
+.b.on,.b[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.b.go{border-color:var(--green);color:var(--green)}
+.b.go:hover{background:var(--green);color:var(--bg)}
+.b[disabled]{opacity:.4;cursor:not-allowed}
+.b[hidden]{display:none}
+select,input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--line);padding:0 6px;color:var(--fg);min-width:0;max-width:100%}
+input[type=number]{width:7ch}
+input[type=checkbox]{accent-color:var(--green);margin:0 6px 0 0;vertical-align:-1px}
+input[type=range]{width:100%;accent-color:var(--amber);margin:2px 0}
+.chk{display:inline-flex;align-items:center;cursor:pointer;color:var(--fg)}
+.seg{display:inline-flex;border:1px solid var(--line)}
+.seg .b{border:0;border-right:1px solid var(--line)}
+.seg .b:last-child{border-right:0}
+
+/* configuration */
+.legend4{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;color:var(--dim);font-size:.92em}
+.legend4 b{color:var(--fg)}
+.rule{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:2px 0;border-top:1px dotted var(--line)}
+.rule .rn b{font-weight:500}
+.rule .rn span{display:block;color:var(--dim);font-size:.88em;line-height:1.2}
+
+/* road */
+.scene{position:relative;height:3.4em;border-top:1px solid var(--dim);border-bottom:1px solid var(--dim);margin:2px 0 0;background:repeating-linear-gradient(90deg,transparent 0 12px,color-mix(in srgb,var(--dim) 18%,transparent) 12px 14px);background-size:100% 1px;background-repeat:repeat-x;background-position:0 50%}
+.scene .car{position:absolute;left:0;top:50%;transform:translateY(-50%);color:var(--amber);font-weight:700;transition:left 1.7s cubic-bezier(.5,0,.2,1);white-space:nowrap}
+.scene .car.rejected{color:var(--red)}
+.scene .gate{position:absolute;left:72%;top:0;bottom:0;width:1.2ch;background:repeating-linear-gradient(135deg,var(--red) 0 4px,transparent 4px 8px);transition:opacity .4s,transform .4s;transform-origin:top}
+.scene .gate.open{opacity:.25;transform:scaleY(.15)}
+.scene .fin{position:absolute;right:0;top:0;bottom:0;width:1.2ch;background:repeating-conic-gradient(var(--fg) 0 25%,transparent 0 50%) 0 0/6px 6px}
+.scene.watch .fin{animation:pulse 1s ease-in-out infinite alternate}
+@keyframes pulse{from{box-shadow:0 0 0 0 var(--green)}to{box-shadow:0 0 10px 3px var(--green)}}
+.scene.hit{animation:hit .5s 3}
+@keyframes hit{50%{border-color:var(--amber)}}
+.marks{position:relative;height:1.3em;color:var(--dim);font-size:.9em}
+.marks span{position:absolute;white-space:nowrap}
+.verdict{font-weight:700;color:var(--amber)}
+.clockline b{font-size:1.25em}
+.ledger{list-style:none;margin:0;padding:0}
+.ledger li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;border-top:1px dotted var(--line);padding:1px 0}
+.ledger b{text-align:right}
+.ledger .n{grid-column:1/-1;color:var(--dim);font-size:.88em;line-height:1.25}
+.ev{font-size:.82em;padding:0 5px;margin-left:6px;border:1px solid currentColor}
+.ev.s{color:var(--green)}.ev.m{color:var(--amber)}.ev.w{color:var(--dim)}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:11ch minmax(0,1fr);gap:0 6px;padding:1px 0;border-top:1px dotted var(--line);line-height:1.3}
+.log li.empty{display:block;color:var(--dim)}
+.log b{font-weight:500}
+.log .path{color:var(--fg)}
+.tag{font-weight:700}
+.t-pass{color:var(--dim)}.t-steered{color:var(--blue)}.t-stopped{color:var(--red)}.t-watching{color:var(--green)}.t-held{color:var(--amber)}
+.t-missed{color:var(--bg);background:var(--red);padding:0 2px;align-self:start}.t-unchecked{color:var(--amber)}
+.score{display:flex;gap:16px;color:var(--dim)}
+.score b{color:var(--fg)}
+.queue{list-style:none;margin:0;padding:0;color:var(--dim);font-size:.92em}
+
+/* pager */
+.dotsrow{display:flex;flex-wrap:wrap;gap:4px}
+.opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media (max-width:820px){.opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.opt{position:relative;text-align:left;background:none;border:1px solid var(--line);padding:3px 8px 6px;cursor:pointer;color:var(--fg);overflow:hidden}
+.opt:hover{border-color:var(--dim)}
+.opt small{display:block;color:var(--dim);font-size:.88em;line-height:1.25}
+.opt .n{position:absolute;right:8px;top:3px;font-weight:700}
+.opt .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--amber);width:0}
+.opt.picked{border-color:var(--fg)}
+.opt.right{border-color:var(--green);color:var(--green)}
+.opt.ok{border-color:var(--blue);color:var(--blue)}
+.sc-title{color:var(--amber);font-weight:700;font-size:1.1em}
+.chip{border:1px solid var(--amber);color:var(--amber);padding:0 6px;font-size:.85em;margin-left:4px}
+.rv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px}
+@media (max-width:820px){.rv{grid-template-columns:minmax(0,1fr)}}
+.reveal{border-left:3px solid var(--amber);padding-left:10px}
+.reveal.bad{border-left-color:var(--red);grid-column:1/-1}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;align-content:start}
+.split div{border:1px solid var(--line);padding:2px 8px}
+.split span{display:block;color:var(--dim);font-size:.85em}
+.map{width:100%;border-collapse:collapse;font-size:.92em}
+.map th,.map td{text-align:left;padding:1px 8px 1px 0;border-top:1px dotted var(--line);vertical-align:top}
+.map th{color:var(--dim);font-weight:500;border-top:0}
+
+/* say no */
+.feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 10px}
+@media (max-width:560px){.feats{grid-template-columns:minmax(0,1fr)}}
+.feat{border:1px solid var(--line);padding:1px 6px 2px;min-width:0}
+.feat.on{border-color:var(--green)}
+.feat.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.featbtn{display:block;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:var(--fg);line-height:1.25}
+.featbtn .bx{color:var(--dim);margin-right:6px}
+.feat.on .bx{color:var(--green)}
+.featbtn small{display:block;color:var(--dim);font-size:.86em;padding-left:4ch}
+.nums{display:flex;gap:6px;padding-left:4ch;font-size:.86em;color:var(--dim)}
+.nums button{background:none;border:0;padding:0;color:var(--dim);cursor:default;font-size:1em}
+.feats.editing .nums button{cursor:pointer;color:var(--amber);border-bottom:1px dashed var(--amber)}
+.warn{color:var(--red);font-weight:700;min-height:1.38em}
+.mrow{display:grid;grid-template-columns:15ch minmax(0,1fr) 7ch;gap:8px;align-items:center}
+.mrow .bar{white-space:nowrap;overflow:hidden;color:var(--green);letter-spacing:0}
+.mrow .bar.eff{color:var(--amber)}
+.mrow .bar.over{color:var(--red)}
+.mrow b{text-align:right}
+
+/* cage */
+.chartwrap{flex:1;min-height:0}
+.chart{width:100%;height:100%;display:block}
+.chart text{fill:var(--dim);font-size:11px;font-family:var(--mono)}
+.chart .curve{fill:none;stroke-width:2.5;stroke-linecap:round}
+.zone{font-size:1.5em;font-weight:700}
+.leg i{display:inline-block;width:2ch;height:3px;margin-right:6px;vertical-align:middle}
+
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 88%,transparent);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay[hidden]{display:none}
+.overlay .box{background:var(--panel);max-width:900px;max-height:92vh;overflow:auto;padding:14px 18px;gap:8px}
+.overlay ul{margin:0;padding-left:18px}
+.overlay li{margin:4px 0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="term">
+  <div class="titlebar">
+    <span class="lights" aria-hidden="true"><i class="r">●</i><i class="a">●</i><i class="g">●</i></span>
+    <span class="ttl">paved-road@playground ~ boundaries, guardrails, restraint</span>
+    <button class="tbtn" id="srcBtn" type="button">[?] sources</button>
+    <button class="tbtn" id="themeBtn" type="button">[t] theme</button>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Exercises">
+    <button role="tab" id="t1" data-p="pConfig" aria-selected="true"><kbd>1</kbd>configuration</button>
+    <button role="tab" id="t2" data-p="pRoad" aria-selected="false" tabindex="-1"><kbd>2</kbd>go off road</button>
+    <button role="tab" id="t3" data-p="pPager" aria-selected="false" tabindex="-1"><kbd>3</kbd>who owns the pager</button>
+    <button role="tab" id="t4" data-p="pNo" aria-selected="false" tabindex="-1"><kbd>4</kbd>say no</button>
+    <button role="tab" id="t5" data-p="pCage" aria-selected="false" tabindex="-1"><kbd>5</kbd>cage meter</button>
+  </div>
+
+  <main class="screen">
+
+    <!-- 1. CONFIGURATION -->
+    <section class="panel" id="pConfig" role="tabpanel" aria-labelledby="t1">
+      <div class="prompt">config --set rules --control path|rail|net|check</div>
+      <div class="cols">
+        <div class="box">
+          <h3>rules</h3>
+          <div class="legend4">
+            <span><b>path</b> golden path: steers</span>
+            <span><b>rail</b> guardrail: stops</span>
+            <span><b>net</b> safety net: recovers</span>
+            <span><b>check</b> checkpoint: judges</span>
+          </div>
+          <div id="policy"></div>
+          <div class="row" style="margin-top:4px">
+            <button class="b" id="resetRules" type="button">reset defaults</button>
+            <button class="b" id="allRails" type="button">all rail</button>
+            <button class="b" id="allChecks" type="button">all check</button>
+          </div>
+        </div>
+        <div class="box">
+          <h3>settings</h3>
+          <div class="kv">
+            <label for="envSel">environment</label>
+            <select id="envSel">
+              <option value="cloud">mature public cloud</option>
+              <option value="auto">on-prem, automated</option>
+              <option value="manual">on-prem, manual</option>
+            </select>
+            <p class="dim full" id="envNote"></p>
+            <label for="intSel">net interval</label>
+            <select id="intSel">
+              <option value="15">15 seconds</option>
+              <option value="30" selected>30 seconds</option>
+              <option value="60">1 minute</option>
+            </select>
+            <label for="thrSel">failed checks</label>
+            <select id="thrSel">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="5">5</option>
+            </select>
+            <p class="dim full">rollback within <b class="fg" id="rbTime">90 seconds</b> of the first failure (interval × failed checks).</p>
+            <label for="clockSel">checkpoint clock</label>
+            <select id="clockSel">
+              <option value="0.5">4 business hours (critical, first response)</option>
+              <option value="2">2 business days (high-risk design)</option>
+              <option value="3" selected>3 business days (exception decision)</option>
+              <option value="5">5 business days (standard guidance)</option>
+            </select>
+            <p class="dim full">Defaults from a published charter template. Adjust for your organisation.</p>
+            <label class="chk" for="engDown"><input type="checkbox" id="engDown">engine is down</label>
+            <select id="failMode" aria-label="What happens when the guardrail engine is down">
+              <option value="closed">fail closed</option>
+              <option value="open">fail open</option>
+            </select>
+            <p class="dim full">Gatekeeper fails open by default, Kyverno fails closed. Closed halts every deploy. Open ships violations unchecked.</p>
+          </div>
+          <div class="row" style="margin-top:auto"><button class="b go" id="backDeploy" type="button">deploy ▸</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. GO OFF ROAD -->
+    <section class="panel" id="pRoad" role="tabpanel" aria-labelledby="t2" hidden>
+      <div class="prompt">deploy --service <span id="promptName">orders-api</span></div>
+      <div class="cols wide-r">
+        <div class="box">
+          <h3>service</h3>
+          <div class="row">
+            <button class="b" id="presetGood" type="button">clean service</button>
+            <button class="b" id="presetBad" type="button">risky service</button>
+          </div>
+          <div class="kv">
+            <label for="fName">name</label>
+            <input type="text" id="fName" value="orders-api" maxlength="30">
+            <label for="fImage">base image</label>
+            <select id="fImage">
+              <option value="golden">golden-base:3.2 (approved)</option>
+              <option value="latest">node:latest (unpinned)</option>
+              <option value="unknown">randomuser/fastbase (unknown)</option>
+            </select>
+            <label for="fExposure">reachable by</label>
+            <select id="fExposure">
+              <option value="internal">internal only</option>
+              <option value="waf">public, behind the WAF</option>
+              <option value="open">public, open internet</option>
+            </select>
+            <label for="fOwner">owner</label>
+            <select id="fOwner">
+              <option value="team">payments-squad</option>
+              <option value="none">no owner set</option>
+            </select>
+            <label for="fSecrets">secrets</label>
+            <select id="fSecrets">
+              <option value="vault">read from the vault</option>
+              <option value="hardcoded">hardcoded in env vars</option>
+            </select>
+            <label for="fSize">size</label>
+            <select id="fSize">
+              <option value="small">small (2 vCPU)</option>
+              <option value="large">large (8 vCPU)</option>
+              <option value="xxl">XXL (64 vCPU)</option>
+            </select>
+            <label for="fHealth">health check</label>
+            <select id="fHealth">
+              <option value="ok">configured</option>
+              <option value="missing">missing</option>
+            </select>
+          </div>
+          <div class="row" style="margin-top:4px">
+            <button class="b go" id="deployBtn" type="button">deploy ▸</button>
+            <button class="b" id="resetBtn" type="button">reset</button>
+            <button class="b" id="goConfig" type="button">config</button>
+          </div>
+          <div class="score">
+            <span>deploys <b id="sDeploys">0</b></span>
+            <span>stopped <b id="sStops">0</b></span>
+            <span>held <b id="sHolds">0</b></span>
+          </div>
+        </div>
+        <div class="box" aria-live="polite">
+          <h3>pipeline</h3>
+          <div class="scene" id="scene" aria-hidden="true">
+            <div class="gate" id="gate"></div>
+            <div class="fin"></div>
+            <div class="car" id="car">[=&gt;]</div>
+          </div>
+          <div class="marks" aria-hidden="true"><span style="left:0">commit</span><span style="left:70%">gate</span><span style="right:0">production</span></div>
+          <div class="verdict" id="verdict">ready when you are</div>
+          <div class="clockline"><b id="clock">5 to 30 minutes</b> <span class="dim" id="clockLabel">to provision in this environment</span></div>
+          <ul class="ledger" id="ledger" aria-label="Where the time goes"></ul>
+          <ul class="log" id="log"><li class="empty">pick your settings and press deploy.</li></ul>
+          <div class="row">
+            <button class="b" id="queueBtn" type="button" hidden>request exceptions</button>
+          </div>
+          <ul class="queue" id="queue"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PAGER -->
+    <section class="panel" id="pPager" role="tabpanel" aria-labelledby="t3" hidden>
+      <div class="prompt">page --who "first"</div>
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" id="pgSet" role="group" aria-label="Round length">
+          <button class="b" type="button" data-set="full" aria-pressed="true">full (6)</button>
+          <button class="b" type="button" data-set="quick" aria-pressed="false">quick (3)</button>
+        </div>
+        <div class="row">
+          <label class="chk"><input type="checkbox" id="pgCount">count hands</label>
+          <button class="b" id="pgTimer" type="button">start 20 s</button><b id="pgClock">20 s</b>
+        </div>
+      </div>
+      <div class="dotsrow" id="pgDots"></div>
+      <div id="pgBody" style="display:flex;flex-direction:column;gap:8px;min-height:0"></div>
+    </section>
+
+    <!-- 4. SAY NO -->
+    <section class="panel" id="pNo" role="tabpanel" aria-labelledby="t4" hidden>
+      <div class="prompt">backlog --pick --budget <span id="budgetNote">12</span>pts</div>
+      <div class="cols wide-l">
+        <div class="box">
+          <h3>14 good ideas</h3>
+          <div class="row" style="justify-content:space-between">
+            <label class="chk"><input type="checkbox" id="editScores">edit scores</label>
+            <span class="row">
+              <button class="b" id="resetScores" type="button">reset scores</button>
+              <button class="b" id="clearPicks" type="button">clear</button>
+            </span>
+          </div>
+          <p class="warn" id="picksWarn" role="alert"></p>
+          <div class="feats" id="picks"></div>
+        </div>
+        <div class="box">
+          <h3>signals and team</h3>
+          <div class="row">
+            <label class="lab" for="coN">engineers</label>
+            <input type="number" id="coN" min="1" step="1" value="60">
+            <label class="lab" for="teamSel">platform team</label>
+            <input type="number" id="teamSel" min="1" max="60" step="1" value="2">
+          </div>
+          <p id="ratioOut" class="a"></p>
+          <div class="row" id="ratioBtns">
+            <button class="b" type="button" data-p="0.02">low 2%</button>
+            <button class="b" type="button" data-p="0.047">avg 4.7%</button>
+            <button class="b" type="button" data-p="0.06">high 6%</button>
+          </div>
+          <p class="dim" style="font-size:.88em;line-height:1.25">Vendor-sponsored survey of 518 practitioners: a starting point, not proof. Consultancies say 1 per 8 to 12 developers, two to three times higher, mostly unsourced.</p>
+          <div id="sigs"></div>
+          <p id="sigVerdict" class="g" style="line-height:1.3"></p>
+          <p class="dim" id="teamPct"></p>
+          <div class="mrow"><span>impact</span><span class="bar" id="mRelief"></span><b id="vRelief">0</b></div>
+          <div class="mrow"><span>risk reduced</span><span class="bar" id="mRisk"></span><b id="vRisk">0</b></div>
+          <div class="mrow"><span>run cost</span><span class="bar eff" id="mUpkeep"></span><b id="vUpkeep">0</b></div>
+          <div class="mrow"><span>cost to others</span><span class="bar eff" id="mOther"></span><b id="vOther">0</b></div>
+          <div><b class="g" id="totBen">benefit 0</b> <span class="dim">vs</span> <b class="a" id="totEff">effort 0</b></div>
+          <p id="picksVerdict" class="a" style="font-weight:700;line-height:1.3">choose a feature to start.</p>
+          <p class="dim" style="font-size:.86em;line-height:1.25">Run cost is checked against 6 points per platform engineer. Scores are illustrations, not benchmarks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CAGE METER -->
+    <section class="panel" id="pCage" role="tabpanel" aria-labelledby="t5" hidden>
+      <div class="prompt">cage-meter --controls <span id="ctrlVal">34</span></div>
+      <div class="cols wide-l">
+        <div class="box">
+          <h3>risk, workarounds, adoption</h3>
+          <div class="chartwrap"><svg class="chart" id="chart" viewBox="0 0 600 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Chart of risk, workarounds and developers on the road as controls increase"></svg></div>
+          <input id="ctrl" type="range" min="0" max="100" value="34" aria-label="Controls added">
+          <div class="row dim" style="justify-content:space-between"><span>no checks</span><span>a ticket for every change</span></div>
+        </div>
+        <div class="box">
+          <h3>readout</h3>
+          <div class="lab">platform use is</div>
+          <div class="seg" id="modeSeg" role="group" aria-label="Platform use" style="align-self:flex-start;flex-direction:column;width:100%">
+            <button class="b" type="button" data-m="optional" aria-pressed="true" style="text-align:left;border-right:0;border-bottom:1px solid var(--line)">optional, with an escape hatch</button>
+            <button class="b" type="button" data-m="mandated" aria-pressed="false" style="text-align:left;border-right:0">mandated for the whole lifecycle</button>
+          </div>
+          <div class="leg"><i style="background:var(--red)"></i>risk exposure <b id="lRisk"></b></div>
+          <div class="leg"><i style="background:var(--amber)"></i>workarounds <b id="lWork"></b></div>
+          <div class="leg"><i style="background:var(--green)"></i>developers on the road <b id="lAdopt"></b></div>
+          <div class="zone" id="zoneName"></div>
+          <p id="zoneText" style="line-height:1.35"></p>
+          <div class="row chips" style="margin-top:auto">
+            <button class="b" data-v="4" type="button">no checks</button>
+            <button class="b" data-v="34" type="button">narrow guardrails</button>
+            <button class="b" data-v="92" type="button">ticket for all</button>
+          </div>
+          <p class="dim" style="font-size:.86em;line-height:1.25">Illustrative curves, not measured data. DORA 2024 links platforms to lower throughput and stability, particularly when mandated for the whole lifecycle. Correlational.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="status">
+    <span>[1-5] tabs · [?] sources · [t] theme</span>
+    <span>“Simple can be harder than complex.” Steve Jobs</span>
+  </div>
+</div>
+
+<div class="overlay" id="srcOverlay" hidden role="dialog" aria-label="Where the numbers come from">
+  <div class="box">
+    <h3 style="position:static;margin:0;padding:0">where the numbers come from</h3>
+    <ul>
+      <li><b>Guardrail decision, under 100 ms:</b> a Kyverno test with 17 pod-security policies, published by its vendor on the CNCF blog. It grows with the number of policies.</li>
+      <li><b>Timeout and failure policy:</b> the Kubernetes admission webhook reference. Default 10 seconds, range 1 to 30. The default failure policy is Fail.</li>
+      <li><b>Safety net:</b> rollback time is roughly failed checks × interval, per Flagger guidance. Recovery tiers come from DORA 2024 as summarised by secondary sources.</li>
+      <li><b>Checkpoint:</b> published change policies at Stanford IT and BYU OIT ask for 2 to 10 business days of notice, with weekly CAB meetings. These are policy minimums, not measured waits. No measured aging data was found.</li>
+      <li><b>Provisioning:</b> self-reported cases (three weeks to 12 minutes, 12.4 days to 2.1 hours), an IDC paper (vendor-hosted, dated) on automated private cloud, and an interview reporting about 16-week hardware lead times in 2021. These are the weakest numbers here.</li>
+      <li><b>Team size:</b> State of Platform Engineering Report Vol. 4 (518 practitioners, vendor-sponsored). 2 to 6% of engineering headcount, 4.7% on average.</li>
+      <li><b>Environment:</b> DORA links flexible infrastructure, usually cloud, to higher organisational performance and warns that lift-and-shift hurts. Control taxonomy: Google Cloud, Beyond guardrails.</li>
+    </ul>
+    <div class="row"><button class="b" id="srcClose" type="button">close [esc]</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+
+/* theme */
+var root=document.documentElement, mq=window.matchMedia("(prefers-color-scheme: dark)");
+function isDark(){return root.dataset.theme?root.dataset.theme==="dark":mq.matches}
+function toggleTheme(){root.dataset.theme=isDark()?"light":"dark"}
+$("#themeBtn").addEventListener("click",toggleTheme);
+
+/* sources overlay */
+function srcOpen(o){$("#srcOverlay").hidden=!o}
+$("#srcBtn").addEventListener("click",function(){srcOpen($("#srcOverlay").hidden)});
+$("#srcClose").addEventListener("click",function(){srcOpen(false)});
+$("#srcOverlay").addEventListener("click",function(e){if(e.target===this)srcOpen(false)});
+
+/* tabs */
+var tabs=$$("[role=tab]");
+function selectTab(t){
+  tabs.forEach(function(x){var on=x===t;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;$("#"+x.dataset.p).hidden=!on});
+}
+tabs.forEach(function(t,i){
+  t.addEventListener("click",function(){selectTab(t)});
+  t.addEventListener("keydown",function(e){
+    if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+      var n=tabs[(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];n.focus();selectTab(n);
+    }
+  });
+});
+document.addEventListener("keydown",function(e){
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key==="Escape"){srcOpen(false);return}
+  var tg=e.target&&e.target.tagName;
+  if(tg==="INPUT"||tg==="SELECT"||tg==="TEXTAREA")return;
+  if(e.key>="1"&&e.key<="5"){var t=tabs[+e.key-1];selectTab(t);t.focus()}
+  else if(e.key==="?"){srcOpen($("#srcOverlay").hidden)}
+  else if(e.key==="t"||e.key==="T"){toggleTheme()}
+});
+
+/* ---------- configuration + go off road ---------- */
+var CTL=[["path","path","Golden path"],["rail","rail","Guardrail"],["net","net","Safety net"],["check","check","Checkpoint"]];
+var LABEL={pass:"[PASS]",steered:"[STEERED]",stopped:"[STOPPED]",watching:"[WATCHING]",held:"[HELD]",missed:"[MISSED]",unchecked:"[UNCHECKED]"};
+var RULES=[
+  {id:"tag",name:"Pinned image tags",owner:"Platform",def:"path",
+   test:function(f){return f.image==="latest"},
+   pass:"Image tag is pinned.",ok:"Use golden-base:3.2.",
+   m:{path:"The template pinned it to golden-base:3.2.",
+      rail:"Unpinned tags can change under you.",
+      net:"Shipped. Drift detection watches the image and rolls back if it changes.",
+      check:"A person has to approve an unpinned tag."}},
+  {id:"registry",name:"Trusted registries",owner:"Security",def:"rail",
+   test:function(f){return f.image==="unknown"},
+   pass:"Image comes from an approved registry.",ok:"Use golden-base:3.2, or request a new image through the catalog.",
+   m:{path:"The template swapped in golden-base:3.2 and told security.",
+      rail:"Images from unknown registries can’t run here.",
+      net:"Shipped. Scanning watches it and pulls it if a known vulnerability turns up.",
+      check:"Security reviews the image before it runs."}},
+  {id:"exposure",name:"Internet exposure",owner:"Security",def:"check",
+   test:function(f){return f.exposure==="open"},
+   pass:"Exposure matches policy.",ok:"Choose public, behind the WAF.",
+   m:{path:"The template put it behind the WAF.",
+      rail:"Services can’t be opened to the whole internet.",
+      net:"Shipped. Traffic monitoring watches it and closes the rule on detection.",
+      check:"Security reviews the design before it goes public."}},
+  {id:"secrets",name:"Secrets handling",owner:"Security",def:"rail",
+   test:function(f){return f.secrets==="hardcoded"},
+   pass:"Secrets come from the vault.",ok:"Read values from the vault.",
+   m:{path:"The template moved the values into the vault. Rotation is flagged to the owner.",
+      rail:"Secret scanning found hardcoded values.",
+      net:"Shipped. Scanning watches for leaks and revokes keys when it finds one.",
+      check:"A person reviews the hardcoded values."}},
+  {id:"owner",name:"Named owner",owner:"Platform",def:"path",
+   test:function(f){return f.owner==="none"},
+   pass:"Owner is set.",ok:"Pick your squad from the catalog.",
+   m:{path:"The template filled in the owner from your squad in the catalog.",
+      rail:"Every service needs a named owner.",
+      net:"Shipped. A bot chases the missing owner until it is set.",
+      check:"The catalog team assigns an owner by hand."}},
+  {id:"size",name:"Right-sizing",owner:"Platform",def:"net",
+   test:function(f){return f.size==="xxl"},
+   pass:"Size fits the default envelope.",ok:"Choose large or smaller.",
+   m:{path:"The template capped it at large (8 vCPU).",
+      rail:"XXL isn’t available without a policy change.",
+      net:"Shipped. A cost monitor alerts and scales it down if it sits idle.",
+      check:"A person approves the cost of XXL."}},
+  {id:"health",name:"Health check",owner:"Platform",def:"net",
+   test:function(f){return f.health==="missing"},
+   pass:"Health check is configured.",ok:"Enable the template’s default health check.",
+   m:{path:"The template added its default health check.",
+      rail:"Services without a health check can’t deploy.",
+      net:"Shipped. Monitoring rolls it back automatically if it fails to come up.",
+      check:"A person reviews the rollout plan."}}
+];
+RULES.forEach(function(r){r.ctl=r.def});
+var S={deploys:0,stops:0,holds:0,queue:[],lastHeld:[],lastName:"",lastClock:3};
+
+function fmtBd(n){return n<1?"4 business hours":n+" business days"}
+function fmtSec(t){if(t<60)return t+" seconds";var m=Math.round(t/60);return m+(m===1?" minute":" minutes")}
+var ENV={
+  cloud:{range:"5 to 30 minutes",ev:["w","anecdote"],note:"Managed Kubernetes in 5 to 15 minutes. Golden-path cases report 12 to 30. Self-reported."},
+  auto:{range:"15 minutes to a few hours",ev:["w","illustrative"],note:"IDC reports under 15 minutes for provisioning with automation. Vendor-hosted, dated. The rest is assumed."},
+  manual:{range:"days to weeks",ev:["w","anecdote"],note:"Hardware procurement can take weeks to months, and manual approvals add days or weeks."}
+};
+function env(){return ENV[$("#envSel").value]}
+function rollbackSecs(){return (+$("#intSel").value)*(+$("#thrSel").value)}
+function ledgerRow(label,value,cls,evt,note){
+  return '<li><span>'+label+'<span class="ev '+cls+'">'+evt+'</span></span><b>'+value+'</b><span class="n">'+note+'</span></li>';
+}
+function resetClock(){$("#clock").textContent=env().range;$("#clockLabel").textContent="to provision in this environment";$("#ledger").innerHTML=""}
+function syncSettings(){$("#envNote").textContent=env().note;$("#rbTime").textContent=fmtSec(rollbackSecs())}
+
+function buildPolicy(){
+  $("#policy").innerHTML=RULES.map(function(r){
+    var segs=CTL.map(function(c){return '<button type="button" class="b" data-rule="'+r.id+'" data-c="'+c[0]+'" title="'+c[2]+'" aria-pressed="false">'+c[1]+'</button>'}).join("");
+    return '<div class="rule"><div class="rn"><b>'+r.name+'</b><span>'+r.owner+' owns this rule</span></div><div class="seg" role="group" aria-label="Control for '+r.name+'">'+segs+'</div></div>';
+  }).join("");
+  $$("#policy .b").forEach(function(b){
+    b.addEventListener("click",function(){
+      RULES.filter(function(r){return r.id===b.dataset.rule})[0].ctl=b.dataset.c;syncPolicy();
+    });
+  });
+  syncPolicy();
+}
+function syncPolicy(){
+  $$("#policy .b").forEach(function(b){
+    var r=RULES.filter(function(x){return x.id===b.dataset.rule})[0];
+    b.setAttribute("aria-pressed",String(r.ctl===b.dataset.c));
+  });
+}
+function setAll(c){RULES.forEach(function(r){r.ctl=c});syncPolicy()}
+$("#allRails").addEventListener("click",function(){setAll("rail")});
+$("#allChecks").addEventListener("click",function(){setAll("check")});
+$("#resetRules").addEventListener("click",function(){RULES.forEach(function(r){r.ctl=r.def});syncPolicy()});
+
+function setForm(v){
+  $("#fImage").value=v.image;$("#fExposure").value=v.exposure;$("#fOwner").value=v.owner;
+  $("#fSecrets").value=v.secrets;$("#fSize").value=v.size;$("#fHealth").value=v.health;
+}
+$("#presetGood").addEventListener("click",function(){setForm({image:"golden",exposure:"waf",owner:"team",secrets:"vault",size:"small",health:"ok"})});
+$("#presetBad").addEventListener("click",function(){setForm({image:"latest",exposure:"open",owner:"none",secrets:"hardcoded",size:"xxl",health:"missing"})});
+$("#fName").addEventListener("input",function(){$("#promptName").textContent=this.value||"your-service"});
+
+var carTimer=null;
+function moveCar(p,stopped){
+  var car=$("#car");
+  clearTimeout(carTimer);
+  car.classList.remove("rejected");car.textContent="[=>]";
+  car.style.transition="none";car.style.left="0px";void car.offsetWidth;car.style.transition="";
+  car.style.left="calc((100% - 5ch) * "+p+")";
+  if(stopped){carTimer=setTimeout(function(){car.classList.add("rejected");car.textContent="[xx]"},1700)}
+}
+function pulse(el){el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit")}
+function plural(n,a,b){return n+" "+(n===1?a:b)}
+
+function deploy(){
+  var f={image:$("#fImage").value,exposure:$("#fExposure").value,owner:$("#fOwner").value,
+         secrets:$("#fSecrets").value,size:$("#fSize").value,health:$("#fHealth").value};
+  var name=($("#fName").value||"your-service").trim()||"your-service";
+  var down=$("#engDown").checked, failMode=$("#failMode").value, clock=+$("#clockSel").value;
+
+  var out=RULES.map(function(r){
+    var hit=r.test(f), c=r.ctl, o={r:r,state:"pass",msg:r.pass,path:""};
+    if(c==="rail"&&down){
+      if(failMode==="closed"){o.state="stopped";o.msg="The guardrail engine is down and failing closed. This check can’t run, so nothing ships.";return o}
+      if(hit){o.state="missed";o.msg="Not checked: engine down, failing open. This violation shipped.";return o}
+      o.state="unchecked";o.msg="Not checked: engine down, failing open. It passed without a look.";return o;
+    }
+    if(!hit)return o;
+    if(c==="path"){o.state="steered";o.msg=r.m.path}
+    else if(c==="rail"){o.state="stopped";o.msg=r.m.rail;o.path=r.ok}
+    else if(c==="net"){o.state="watching";o.msg=r.m.net+" If it fails, it is live for up to "+fmtSec(rollbackSecs())+"."}
+    else{o.state="held";o.msg=r.m.check;o.path=r.ok}
+    return o;
+  });
+  function by(s){return out.filter(function(x){return x.state===s})}
+  var stopped=by("stopped"),held=by("held"),steered=by("steered"),watching=by("watching"),missed=by("missed");
+  var blocked=stopped.length>0||held.length>0;
+  var engineHalt=down&&failMode==="closed"&&RULES.some(function(r){return r.ctl==="rail"});
+
+  $("#log").innerHTML=out.map(function(x){
+    return '<li><span class="tag t-'+x.state+'">'+LABEL[x.state]+'</span><div><b>'+x.r.name+'</b> <span class="dim">'+x.msg+'</span>'+
+      (x.path?' <span class="path">→ '+x.path+'</span>':'')+'</div></li>';
+  }).join("");
+
+  var v;
+  if(engineHalt)v=name+" can’t ship: the guardrail engine is down";
+  else if(stopped.length&&held.length)v=name+" stopped by a guardrail and held for review";
+  else if(stopped.length)v=name+" stopped by "+plural(stopped.length,"guardrail","guardrails");
+  else if(held.length)v=name+" held for review";
+  else{
+    var parts=[];
+    if(steered.length)parts.push(steered.length+" steered back to the path");
+    if(watching.length)parts.push("safety net watching");
+    if(missed.length)parts.push(plural(missed.length,"violation","violations")+" unchecked");
+    v=name+" shipped"+(parts.length?", with "+parts.join(", "):"");
+  }
+  $("#verdict").textContent=v;
+
+  var E=env(),railOn=RULES.some(function(r){return r.ctl==="rail"});
+  if(held.length){$("#clock").textContent=fmtBd(clock);$("#clockLabel").textContent="waiting on a person"}
+  else if(engineHalt){$("#clock").textContent="up to 10 seconds";$("#clockLabel").textContent="per request, then it fails closed"}
+  else if(stopped.length){$("#clock").textContent="under a second";$("#clockLabel").textContent="to a clear answer. The fix and redeploy are on you."}
+  else{$("#clock").textContent=E.range;$("#clockLabel").textContent="to provision in this environment"}
+
+  var rows=[ledgerRow("provisioning here",E.range,E.ev[0],E.ev[1],E.note)];
+  if(steered.length)rows.push(ledgerRow("golden path","no added wait","s","by design","The template makes the choice before the deploy runs."));
+  if(stopped.length&&!engineHalt)rows.push(ledgerRow("guardrail decision","under 100 ms","s","vendor test","Kyverno, 17 policies. Grows with policy count. Fix and redeploy are on the developer."));
+  if(down&&railOn){
+    if(failMode==="closed")rows.push(ledgerRow("engine timeout","up to 10 seconds","m","documented","Webhook default, 1 to 30 seconds. Failure policy Fail denies the request."));
+    else rows.push(ledgerRow("engine timeout","up to 10 s, then allowed","m","documented","Failure policy Ignore lets the request through when the engine can’t answer."));
+  }
+  if(watching.length)rows.push(ledgerRow("safety net rollback",fmtSec(rollbackSecs()),"m","formula","Failed checks × interval, as in Flagger."));
+  if(held.length)rows.push(ledgerRow("checkpoint wait",fmtBd(clock),"m","your setting","Published CAB policies ask for 2 to 10 business days. Policy minimums, not measured waits."));
+  $("#ledger").innerHTML=rows.join("");
+  S.shown=true;
+
+  $("#gate").classList.toggle("open",!blocked);
+  $("#scene").classList.toggle("watch",!blocked&&watching.length>0);
+  moveCar(blocked?0.56:0.96,blocked);
+  if(stopped.length||steered.length)pulse($("#scene"));
+
+  S.deploys++;S.stops+=stopped.length;S.holds+=held.length;
+  S.lastHeld=held.map(function(h){return h.r});S.lastName=name;S.lastClock=clock;
+  $("#sDeploys").textContent=S.deploys;$("#sStops").textContent=S.stops;$("#sHolds").textContent=S.holds;
+  $("#queueBtn").hidden=!held.length;
+}
+$("#deployBtn").addEventListener("click",deploy);
+
+$("#resetBtn").addEventListener("click",function(){
+  clearTimeout(carTimer);
+  var car=$("#car");
+  car.classList.remove("rejected");car.textContent="[=>]";
+  car.style.transition="left 1s cubic-bezier(.5,0,.5,1)";
+  car.style.left="0px";
+  $("#gate").classList.remove("open");
+  $("#scene").classList.remove("watch");
+  $("#verdict").textContent="ready when you are";
+  resetClock();
+  S.shown=false;
+  $("#log").innerHTML='<li class="empty">pick your settings and press deploy.</li>';
+  $("#queueBtn").hidden=true;
+  S.lastHeld=[];
+});
+
+$("#queueBtn").addEventListener("click",function(){
+  S.lastHeld.forEach(function(r){S.queue.push({svc:S.lastName,rule:r.name,clock:S.lastClock})});
+  S.lastHeld=[];$("#queueBtn").hidden=true;
+  var q=$("#queue");q.innerHTML="";
+  var head=document.createElement("li");head.className="a";
+  head.textContent="exception queue: "+S.queue.length+" waiting";q.appendChild(head);
+  S.queue.slice(-3).forEach(function(e){
+    var li=document.createElement("li");
+    li.textContent=e.svc+", "+e.rule+": decision due within "+fmtBd(e.clock);q.appendChild(li);
+  });
+  var foot=document.createElement("li");
+  foot.textContent="One owner approves, one door takes requests, one clock keeps time.";q.appendChild(foot);
+});
+buildPolicy();
+syncSettings();resetClock();
+$("#envSel").addEventListener("change",function(){syncSettings();if(!S.shown)resetClock()});
+$("#intSel").addEventListener("change",syncSettings);
+$("#thrSel").addEventListener("change",syncSettings);
+$("#goConfig").addEventListener("click",function(){selectTab($("#t1"));$("#t1").focus()});
+$("#backDeploy").addEventListener("click",function(){selectTab($("#t2"));$("#t2").focus()});
+
+/* ---------- pager ---------- */
+var OWN=[
+  {id:"platform",name:"Platform team",d:"Runs the road as a product"},
+  {id:"sre",name:"SRE",d:"Reliability practice"},
+  {id:"security",name:"Security",d:"Faces the adversary"},
+  {id:"squad",name:"Product team",d:"Builds it, runs it"}
+];
+var NAME={};OWN.forEach(function(o){NAME[o.id]=o.name});
+var ROWS=[["page","Paged first"],["decide","Decides"],["fix","Fixes"],["budget","Budget that burns"]];
+var SC=[
+  {t:"The Template Is the Bug",tests:["Pager","SLO"],
+   d:"The golden-path template ships a broken health check. Forty services fail their next rollout at 2 a.m.",
+   primary:"platform",ok:[],note:"",
+   split:{page:"Platform team",decide:"Platform team: hotfix or roll back the template",fix:"Platform fixes the template. Product teams redeploy.",budget:"Platform SLO: deployment success rate"},
+   why:"A template is a product the platform team ships, so its defects are the platform’s defects. Product teams shouldn’t debug a default someone else wrote.",
+   fail:"The platform team calls it user error and closes the ticket. Product teams learn the paved road is optional."},
+  {t:"Three Weeks, No Owner",tests:["Pager"],
+   d:"A misconfiguration sits in a shared cloud account for three weeks. The platform team assumed the application team owned it. The application team assumed security did.",
+   primary:"platform",ok:["security"],note:"A composite story, not a named incident.",
+   split:{page:"Platform team (it runs the shared account)",decide:"Security sets the risk threshold",fix:"Platform team",budget:"None. No SLO covered it, which is the problem."},
+   why:"A shared cloud account is shared infrastructure, so the platform team is a reasonable primary owner. The real fix is a table with one primary owner and named contributors for every control that crosses a team boundary.",
+   fail:"Nobody was wrong, because nobody had written down who owned it. No tool closes that gap."},
+  {t:"Latency Doubles After a Deploy",tests:["Pager","SLO"],
+   d:"A product team’s checkout service gets twice as slow ten minutes after its own release. The platform is healthy.",
+   primary:"squad",ok:[],note:"",
+   split:{page:"The product team",decide:"The product team: roll back or fix forward",fix:"The product team",budget:"The product team’s service SLO, negotiated with SRE"},
+   why:"You build it, you run it. The product team owns its service SLO. The platform supplies the signals and the rollback button.",
+   fail:"The product team pages the platform team for a problem in its own code, and the platform turns into a help desk."},
+  {t:"A Guardrail Blocks a Legitimate Deploy",tests:["Pager","Exception queue"],
+   d:"It is 2 a.m. A guardrail rejects a deploy a product team needs to fix an outage. The policy author, the enforcer and the blocked team may be three different people.",
+   primary:"platform",ok:["security"],note:"A working default. No published answer found. If your organisation has one, share it.",
+   split:{page:"Platform team (it runs the enforcer)",decide:"Security: does the policy bend?",fix:"Platform grants the exception or patches the rule",budget:"Platform SLO: deployment success rate"},
+   why:"The platform team runs the enforcer, so it takes the page. Security owns the policy and decides whether it bends. The blocked product team supplies context.",
+   fail:"Everyone waits on someone else’s policy, and the fix waits until morning."},
+  {t:"The Guardrail Engine Goes Down",tests:["SLO"],
+   d:"The service that enforces your policies stops responding. Deploys now either all fail or all pass unchecked.",
+   primary:"platform",ok:["sre"],note:"Gatekeeper fails open by default and Kyverno fails closed.",
+   split:{page:"Platform team (SRE in some models)",decide:"Platform team, using the fail-open or fail-closed choice made in advance",fix:"Platform team",budget:"Platform SLO: pipeline availability"},
+   why:"The platform team runs the enforcement service, so its uptime is the platform’s SLO. In some SRE operating models SRE holds that pager. Decide fail open or fail closed before the outage, not during it.",
+   fail:"Fail closed halts every team. Fail open ships violations with a green tick."},
+  {t:"An Exception Request Is Nine Days Old",tests:["Exception queue"],
+   d:"A product team asked for a gate exception more than a week ago. Nobody has answered and the launch date hasn’t moved.",
+   primary:"security",ok:["platform"],note:"The 3-day clock comes from a published charter template. Treat it as an adjustable default.",
+   split:{page:"Nobody. This is a queue, not an incident.",decide:"Security approves exceptions",fix:"Platform runs the single door",budget:"The 3-business-day clock"},
+   why:"One owner, one door, one clock. Security approves exceptions and owns the decision. The platform runs the single intake. A decision in 3 business days is the default, so nine days is three times over.",
+   fail:"An exception queue with no owner is a gate nobody admits to running."}
+];
+var QUICK=[0,3,5];
+var REV=["reveal the answer","show who does what","how it goes wrong","all revealed"];
+var P={set:"full",pos:0,stage:0,picks:{},timer:null,tally:SC.map(function(){return {platform:0,sre:0,security:0,squad:0}})};
+function order(){return P.set==="quick"?QUICK:SC.map(function(_,i){return i})}
+function sum(t){return OWN.reduce(function(a,o){return a+t[o.id]},0)}
+function stopTimer(){if(P.timer){clearInterval(P.timer);P.timer=null}$("#pgClock").textContent="20 s"}
+$("#pgTimer").addEventListener("click",function(){
+  stopTimer();var t=20;$("#pgClock").textContent=t+" s";
+  P.timer=setInterval(function(){t--;$("#pgClock").textContent=t>0?t+" s":"time";if(t<=0){clearInterval(P.timer);P.timer=null}},1000);
+});
+function chips(a){return a.map(function(x){return '<span class="chip">'+x+'</span>'}).join("")}
+function verdictOf(si,id){var s=SC[si];return id===s.primary?"match":(s.ok.indexOf(id)>-1?"also defensible":"different")}
+
+function wrapHtml(ord){
+  var rows=ord.map(function(si){
+    var s=SC[si],t=P.tally[si],tot=sum(t),pk=P.picks[si];
+    var you=pk?NAME[pk]+" ("+verdictOf(si,pk)+")":"-";
+    var room=tot?Math.round(t[s.primary]/tot*100)+"% matched ("+tot+" votes)":"-";
+    return '<tr><td>'+s.t+'</td><td>'+NAME[s.primary]+'</td><td>'+you+'</td><td>'+room+'</td></tr>';
+  }).join("");
+  return '<div class="sc-title">Wrap-up</div>'+
+  '<p>Most of these broke where nobody had written the answer down. Write down three answers before the next incident: <b class="a">who is paged, whose budget burns, who owns the queue.</b></p>'+
+  '<table class="map"><thead><tr><th>Scenario</th><th>Usual answer</th><th>You</th><th>Room</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<div class="sc-title" style="margin-top:2px">The ownership map</div>'+
+  '<table class="map"><thead><tr><th>Team</th><th>Owns</th><th>Does not own</th></tr></thead><tbody>'+
+  '<tr><td>Platform</td><td>Golden paths, templates, shared pipelines, base images, provisioning APIs, its own SLOs</td><td>Frontline on-call for product services</td></tr>'+
+  '<tr><td>SRE</td><td>SLIs and SLOs, error budgets, incident coordination, capacity planning, postmortems</td><td>Building the developer platform</td></tr>'+
+  '<tr><td>Security</td><td>Threat models, policy, risk thresholds, exception approval</td><td>An approval queue as its main way of talking to engineers</td></tr>'+
+  '<tr><td>Product teams</td><td>Their services end to end, including on-call, within the guardrails</td><td>-</td></tr>'+
+  '</tbody></table>'+
+  '<p class="dim">A working division, not a measured standard. Draw hard lines and enforce them, and you rebuild the old silos with new job titles. The good ones keep the edges a little loose on purpose.</p>';
+}
+
+function renderPager(){
+  var ord=order(),counting=$("#pgCount").checked,body=$("#pgBody");
+  $("#pgDots").innerHTML=ord.map(function(si,k){
+    return '<button type="button" class="b" aria-pressed="'+(k===P.pos)+'" data-k="'+k+'" aria-label="Scenario '+(k+1)+'">'+(k+1)+'</button>';
+  }).join("")+'<button type="button" class="b" aria-pressed="'+(P.pos>=ord.length)+'" data-k="'+ord.length+'">wrap-up</button>';
+  $$("#pgDots .b").forEach(function(b){
+    b.addEventListener("click",function(){P.pos=+b.dataset.k;P.stage=0;stopTimer();renderPager()});
+  });
+  if(P.pos>=ord.length){body.innerHTML=wrapHtml(ord);return}
+
+  var si=ord[P.pos],s=SC[si],t=P.tally[si],total=sum(t);
+  var opts=OWN.map(function(o){
+    var cls="opt",picked=!counting&&P.picks[si]===o.id;
+    if(P.stage>=1&&o.id===s.primary)cls+=" right";
+    else if(P.stage>=1&&s.ok.indexOf(o.id)>-1)cls+=" ok";
+    else if(picked)cls+=" picked";
+    var n=t[o.id],w=total?Math.round(n/total*100):0;
+    return '<button type="button" class="'+cls+'" data-id="'+o.id+'" aria-pressed="'+picked+'"><strong>'+o.name+'</strong><small>'+o.d+'</small>'+
+      (counting?'<span class="n">'+n+'</span><span class="bar" style="width:'+w+'%"></span>':'')+'</button>';
+  }).join("");
+  var h='<div><span class="dim">tests</span>'+chips(s.tests)+'</div>'+
+    '<div class="sc-title">'+s.t+'</div><p>'+s.d+'</p><div class="opts">'+opts+'</div>'+
+    '<div class="row"><button class="b go" id="pgReveal" type="button"'+(P.stage>=3?' disabled':'')+'>'+REV[P.stage]+' ▸</button>'+
+    '<button class="b" id="pgNext" type="button">'+(P.pos===ord.length-1?"wrap-up":"next scenario")+'</button></div>';
+  if(P.stage>=1){
+    var lead="";
+    if(!counting&&P.picks[si]){var v=verdictOf(si,P.picks[si]);lead=v==="match"?"You matched. ":(v==="also defensible"?"Your answer is also defensible. ":"Different from the usual answer. ")}
+    var room=total?'<p class="dim">Room: '+Math.round(t[s.primary]/total*100)+'% picked '+NAME[s.primary]+' ('+total+(total===1?' vote':' votes')+').</p>':'';
+    h+='<div class="rv"><div class="reveal"><p><b class="g">'+lead+'Page first: '+NAME[s.primary]+'.</b></p><p>'+s.why+'</p>'+room+'</div>';
+    if(P.stage>=2){
+      h+='<div class="split">'+ROWS.map(function(r){return '<div><span>'+r[1]+'</span>'+s.split[r[0]]+'</div>'}).join("")+'</div>';
+    }
+    if(P.stage>=3){
+      h+='<div class="reveal bad"><p><b class="r">How it goes wrong:</b> '+s.fail+'</p>'+(s.note?'<p class="dim">'+s.note+'</p>':'')+'</div>';
+    }
+    h+='</div>';
+    if(P.stage>=2)h+='<p class="dim">Working division from the ownership map, not a measured standard.</p>';
+  }
+  body.innerHTML=h;
+  $$("#pgBody .opt").forEach(function(b){
+    b.addEventListener("click",function(){
+      if($("#pgCount").checked){P.tally[si][b.dataset.id]++}else{P.picks[si]=b.dataset.id}
+      renderPager();
+    });
+  });
+  $("#pgReveal").addEventListener("click",function(){if(P.stage<3){P.stage++;renderPager()}});
+  $("#pgNext").addEventListener("click",function(){P.pos++;P.stage=0;stopTimer();renderPager()});
+}
+$("#pgCount").addEventListener("change",renderPager);
+$$("#pgSet .b").forEach(function(b){
+  b.addEventListener("click",function(){
+    P.set=b.dataset.set;P.pos=0;P.stage=0;stopTimer();
+    $$("#pgSet .b").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))});
+    renderPager();
+  });
+});
+renderPager();
+
+/* ---------- say no ---------- */
+var F=[
+  {n:"Service catalog with owners",d:"Who owns what, in one place",r:3,u:2,k:3,o:2},
+  {n:"Golden-path templates",d:"A new service in minutes",r:5,u:3,k:3,o:2},
+  {n:"One-click Postgres",d:"A database without a ticket",r:4,u:3,k:2,o:1},
+  {n:"Self-service environments",d:"Spin up and tear down",r:4,u:4,k:1,o:2},
+  {n:"Policy-as-code checks",d:"Rules that run before merge",r:2,u:2,k:5,o:3},
+  {n:"Secrets vault integration",d:"No keys in code",r:3,u:2,k:5,o:2},
+  {n:"Auto-rollback",d:"Bad deploys undo themselves",r:4,u:3,k:3,o:1},
+  {n:"Cost dashboards",d:"Spend visible per team",r:2,u:2,k:2,o:1},
+  {n:"In-house CI engine",d:"Build your own pipelines",r:2,u:5,k:1,o:4},
+  {n:"Multi-cloud abstraction layer",d:"One API over every cloud",r:1,u:5,k:1,o:4},
+  {n:"Ticket-based approvals",d:"A form for every change",r:1,u:3,k:2,o:4},
+  {n:"Developer portal, built in-house",d:"The front door, built first",r:2,u:5,k:0,o:2},
+  {n:"Docs chatbot",d:"Ask the portal a question",r:2,u:3,k:0,o:1},
+  {n:"Kubernetes YAML wizard",d:"Forms that write manifests",r:2,u:3,k:1,o:2}
+];
+F.forEach(function(f){f.c=1});
+var DEF=F.map(function(f){return {r:f.r,u:f.u,k:f.k,o:f.o,c:1}});
+var CONF=[1,0.8,0.5];
+var PER=6,picked=[];
+var PORTAL=11,GOLDEN=1;
+function budget(){return Math.max(1,+$("#teamSel").value||1)*PER}
+function usedU(){return picked.reduce(function(a,i){return a+F[i].u},0)}
+function fn(x){return String(Math.round(x*10)/10)}
+function bar(v,max,w){var n=Math.round(Math.max(0,Math.min(1,v/max))*w);return new Array(n+1).join("█")+new Array(w-n+1).join("░")}
+var warnTimer=null;
+function showWarn(t){var w=$("#picksWarn");w.textContent=t;clearTimeout(warnTimer);warnTimer=setTimeout(function(){update()},6000)}
+function hideWarn(){clearTimeout(warnTimer);$("#picksWarn").textContent=""}
+function numsHtml(f){
+  var ed=$("#editScores").checked,d=ed?"":" tabindex=\"-1\" aria-disabled=\"true\"";
+  return '<button type="button" data-f="r"'+d+'>impact '+f.r+'</button><button type="button" data-f="k"'+d+'>risk '+f.k+'</button>'+
+    '<span>|</span><button type="button" data-f="u"'+d+'>run '+f.u+'</button><button type="button" data-f="o"'+d+'>others '+f.o+'</button>'+
+    '<button type="button" data-f="c"'+d+'>'+Math.round(f.c*100)+'%</button>';
+}
+function renderPicks(){
+  $("#picks").innerHTML=F.map(function(f,i){
+    var on=picked.indexOf(i)>-1;
+    return '<div class="feat'+(on?' on':'')+'" data-i="'+i+'">'+
+      '<button type="button" class="featbtn" aria-pressed="'+on+'"><span class="bx">'+(on?'[x]':'[ ]')+'</span><strong>'+f.n+'</strong><small>'+f.d+'</small></button>'+
+      '<div class="nums">'+numsHtml(f)+'</div></div>';
+  }).join("");
+  $("#picks").classList.toggle("editing",$("#editScores").checked);
+  $$("#picks .feat").forEach(function(card){
+    var i=+card.dataset.i;
+    $(".featbtn",card).addEventListener("click",function(){
+      var at=picked.indexOf(i);
+      if(at>-1){picked.splice(at,1)}
+      else if(usedU()+F[i].u>budget()){
+        card.classList.add("shake");setTimeout(function(){card.classList.remove("shake")},400);
+        showWarn("! Your team can’t carry that much run cost. Say no to something first.");return;
+      }
+      else picked.push(i);
+      renderPicks();update();
+    });
+    $$(".nums button",card).forEach(function(b){
+      b.addEventListener("click",function(){
+        if(!$("#editScores").checked)return;
+        var k=b.dataset.f;
+        if(k==="c"){F[i].c=CONF[(CONF.indexOf(F[i].c)+1)%CONF.length]}
+        else F[i][k]=(F[i][k]+1)%6;
+        $(".nums",card).innerHTML=numsHtml(F[i]);
+        renderPicks();update();
+      });
+    });
+  });
+}
+function update(){
+  var R=0,K=0,U=0,O=0,B=budget();
+  picked.forEach(function(i){R+=F[i].r*F[i].c;K+=F[i].k*F[i].c;U+=F[i].u;O+=F[i].o});
+  var Bt=R+K,Et=U+O;
+  $("#mRelief").textContent=bar(R,25,16);$("#vRelief").textContent=fn(R);
+  $("#mRisk").textContent=bar(K,25,16);$("#vRisk").textContent=fn(K);
+  var up=$("#mUpkeep");up.textContent=bar(U,B,16);up.classList.toggle("over",U>B);
+  $("#vUpkeep").textContent=U+"/"+B;
+  $("#mOther").textContent=bar(O,25,16);$("#vOther").textContent=O;
+  $("#budgetNote").textContent=B;
+  var N=eng(),T=Math.max(1,+$("#teamSel").value||1),pct=N?T/N*100:0,note=N?"team is "+fn(pct)+"% of "+N+" engineers (survey range 2 to 6%).":"";
+  if(N){if(pct>6)note+=" Above it.";else if(pct<2)note+=" Below it."}
+  $("#teamPct").textContent=note;
+  $("#totBen").textContent="benefit "+fn(Bt);
+  $("#totEff").textContent="effort "+fn(Et);
+  var v;
+  if(!picked.length)v="choose a feature to start.";
+  else if(U>B)v="over budget by "+(U-B)+".";
+  else if(picked.indexOf(PORTAL)>-1&&picked.indexOf(GOLDEN)<0)v="a front door with no house behind it. Pick a golden path first.";
+  else if(Et>Bt)v="costs more to own than it returns. Cut something heavy.";
+  else if(picked.length<3)v="keep going. "+(B-U)+" run-cost points left.";
+  else if(K<8)v="developers will love it, and nothing stops a bad day. Add a guardrail.";
+  else if(Bt>=Et+8)v="a thin platform people can say yes to.";
+  else v="workable, but look for a pick that earns less than it costs.";
+  $("#picksVerdict").textContent=v;
+  if(U>B)showWarn("! Over budget by "+(U-B)+" run-cost points. Say no to something.");else hideWarn();
+}
+$("#clearPicks").addEventListener("click",function(){picked=[];renderPicks();update()});
+$("#teamSel").addEventListener("input",update);$("#teamSel").addEventListener("change",update);
+$("#editScores").addEventListener("change",renderPicks);
+$("#resetScores").addEventListener("click",function(){
+  F.forEach(function(f,i){f.r=DEF[i].r;f.u=DEF[i].u;f.k=DEF[i].k;f.o=DEF[i].o;f.c=1});
+  renderPicks();update();
+});
+
+var SIG=[
+  "deployment takes over 30 minutes",
+  "first pull request takes over two weeks",
+  "more than two infra incidents a week",
+  "seniors spend over 30% of time helping",
+  "a new service takes over a day"
+];
+$("#sigs").innerHTML=SIG.map(function(t,i){
+  return '<label class="chk" style="display:flex"><input type="checkbox" data-s="'+i+'">'+t+'</label>';
+}).join("");
+var PCT={low:0.02,avg:0.047,high:0.06};
+function eng(){var n=+$("#coN").value;return n>0?n:0}
+function ratioUpdate(){
+  var n=eng(),f=function(p){return Math.round(n*p*10)/10};
+  var t="at "+n+": low "+f(PCT.low)+", avg "+f(PCT.avg)+", high "+f(PCT.high)+" platform engineers.";
+  if(n*PCT.avg<1)t+=" Under one person: skip a dedicated team.";
+  $("#ratioOut").textContent=t;
+}
+function sigUpdate(){
+  var n=$$("#sigs input:checked").length,N=eng(),v;
+  if(N<20)v="Under about 20 engineers, skip the platform team. Use opinionated managed services and wait for the friction.";
+  else if(n>=2)v=n+" of "+SIG.length+" signals. A consultancy says two or more for a quarter means 2 to 3 platform engineers. Unvalidated, ignores company size.";
+  else v=n+" of "+SIG.length+" signals. The friction hasn’t shown up yet. Check again next quarter.";
+  $("#sigVerdict").textContent=v;
+}
+$$("#sigs input").forEach(function(c){c.addEventListener("change",sigUpdate)});
+$("#coN").addEventListener("input",function(){ratioUpdate();sigUpdate();update()});
+$$("#ratioBtns .b").forEach(function(b){b.addEventListener("click",function(){
+  $("#teamSel").value=Math.max(1,Math.round(eng()*(+b.dataset.p)));update();
+})});
+renderPicks();ratioUpdate();sigUpdate();update();
+
+/* ---------- cage meter ---------- */
+var X0=40,W=540,Y0=220,H=190,M={mand:false};
+function T(){return M.mand?40:62}
+function risk(x){return 100*Math.exp(-x/30)}
+function work(x){return 100/(1+Math.exp(-(x-(T()+4))/8))}
+function adopt(x){return Math.max(0,(100-work(x))*Math.min(1,0.25+x/35))}
+function px(x){return X0+x/100*W}
+function py(v){return Y0-v/100*H}
+function path(fn){var d="";for(var x=0;x<=100;x+=2){d+=(x?"L":"M")+px(x).toFixed(1)+" "+py(fn(x)).toFixed(1)+" "}return d}
+function buildChart(){
+  var bands=[[0,22,"chaos","var(--red)"],[22,T(),"paved road","var(--green)"],[T(),100,"golden cage","var(--amber)"]];
+  var s="";
+  bands.forEach(function(b){
+    s+='<rect x="'+px(b[0])+'" y="20" width="'+(px(b[1])-px(b[0]))+'" height="'+(Y0-20)+'" fill="'+b[3]+'" opacity=".11"/>';
+    s+='<text x="'+((px(b[0])+px(b[1]))/2)+'" y="36" text-anchor="middle">'+b[2]+'</text>';
+  });
+  [25,50,75].forEach(function(g){s+='<line x1="'+X0+'" x2="'+(X0+W)+'" y1="'+py(g)+'" y2="'+py(g)+'" stroke="var(--line)" stroke-dasharray="2 4"/>'});
+  s+='<line x1="'+X0+'" y1="'+Y0+'" x2="'+(X0+W)+'" y2="'+Y0+'" stroke="var(--dim)"/>';
+  s+='<line x1="'+X0+'" y1="20" x2="'+X0+'" y2="'+Y0+'" stroke="var(--dim)"/>';
+  s+='<text x="'+(X0-6)+'" y="'+(py(100)+4)+'" text-anchor="end">100</text><text x="'+(X0-6)+'" y="'+(py(0)+4)+'" text-anchor="end">0</text>';
+  s+='<text x="'+X0+'" y="240">no checks</text><text x="'+(X0+W)+'" y="240" text-anchor="end">ticket for everything</text>';
+  s+='<path class="curve" d="'+path(risk)+'" stroke="var(--red)"/>';
+  s+='<path class="curve" d="'+path(work)+'" stroke="var(--amber)"/>';
+  s+='<path class="curve" d="'+path(adopt)+'" stroke="var(--green)"/>';
+  s+='<line id="mk" x1="0" x2="0" y1="20" y2="'+Y0+'" stroke="var(--fg)" stroke-width="1.5" stroke-dasharray="4 4"/>';
+  s+='<circle id="d1" r="4.5" fill="var(--red)"/><circle id="d2" r="4.5" fill="var(--amber)"/><circle id="d3" r="4.5" fill="var(--green)"/>';
+  $("#chart").innerHTML=s;
+}
+function setCtrl(){
+  var x=+$("#ctrl").value;
+  $("#ctrlVal").textContent=x;
+  $("#mk").setAttribute("x1",px(x));$("#mk").setAttribute("x2",px(x));
+  [["#d1",risk],["#d2",work],["#d3",adopt]].forEach(function(p){$(p[0]).setAttribute("cx",px(x));$(p[0]).setAttribute("cy",py(p[1](x)))});
+  $("#lRisk").textContent=Math.round(risk(x))+"%";$("#lWork").textContent=Math.round(work(x))+"%";$("#lAdopt").textContent=Math.round(adopt(x))+"%";
+  var z,t,c;
+  if(x<22){z="chaos";c="var(--red)";t="Everyone ships fast and nobody is protected. The first incident writes your policy for you."}
+  else if(x<=T()){
+    z="paved road";c="var(--green)";
+    t=M.mand?"Even the paved road narrows when it is the only road. With no escape hatch, every gap in the template becomes a ticket."
+             :"Golden path first, narrow guardrails behind it. This is where people choose the platform."}
+  else{
+    z="golden cage";c="var(--amber)";
+    t=M.mand?"Mandated and gated, with no escape hatch. Teams route around it, exceptions multiply, and compliance turns malicious."
+             :"Every change waits on someone. Teams stop asking and start routing around you."}
+  var zn=$("#zoneName");zn.textContent=z;zn.style.color=c;
+  $("#zoneText").textContent=t;
+}
+buildChart();setCtrl();
+$("#ctrl").addEventListener("input",setCtrl);
+$$(".chips .b").forEach(function(b){b.addEventListener("click",function(){$("#ctrl").value=b.dataset.v;setCtrl()})});
+$$("#modeSeg .b").forEach(function(b){
+  b.addEventListener("click",function(){
+    M.mand=b.dataset.m==="mandated";
+    $$("#modeSeg .b").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))});
+    buildChart();setCtrl();
+  });
+});
+})();
+</script>
+</body>
+</html>
